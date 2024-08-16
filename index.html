@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hebrew LaTeX Renderer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial Hebrew', Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
@@ -35,6 +37,7 @@
     <h1>Hebrew LaTeX Renderer</h1>
     <textarea id="input" placeholder="Enter your Hebrew LaTeX here..."></textarea>
     <button onclick="renderLaTeX()">Render LaTeX</button>
+    <button onclick="generatePDF()">Generate PDF</button>
     <div id="output"></div>
 
     <script>
@@ -49,7 +52,7 @@
                 preferredFont: "TeX",
                 webFont: "TeX",
                 imageFont: null,
-                undefinedFamily: "Arial"
+                undefinedFamily: "Arial Hebrew"
             }
         });
 
@@ -76,6 +79,34 @@
 
             // Render math
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, output]);
+        }
+
+        function generatePDF() {
+            // Wait for MathJax to finish rendering
+            MathJax.Hub.Queue(function () {
+                const { jsPDF } = window.jspdf;
+                const element = document.getElementById('output');
+
+                html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('hebrew_latex.pdf');
+                });
+            });
         }
     </script>
 </body>
